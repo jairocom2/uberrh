@@ -1,0 +1,7 @@
+{
+  "name": "MeUp - Uber do RH",
+  "description": "Plataforma de conexão imediata entre empresas e profissionais qualificados no Rio de Janeiro.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
