@@ -19,13 +19,13 @@ export interface CompanyProfile {
   cnpj: string;
   municipal_registration?: string;
   segment: string;
-  address: string; // Bairro/Referência para o mapa
-  full_address: string; // Logradouro, número, complemento
+  address: string;
+  full_address: string;
   zip_code: string;
   commercial_phone?: string;
   geo_lat: number;
   geo_lng: number;
-  is_verified: boolean; // Indica se o admin validou os documentos
+  is_verified: boolean;
 }
 
 export type ApprovalStatus = 'pendente' | 'aprovado' | 'reprovado';
@@ -115,4 +115,18 @@ export interface Rating {
   stars: number;
   comment: string;
   created_at: string;
+}
+
+// Interface do estado do banco para sincronização
+export interface DbState {
+  last_update: number;
+  profiles: Profile[];
+  company_profiles: CompanyProfile[];
+  professional_profiles: ProfessionalProfile[];
+  job_requests: JobRequest[];
+  job_offers: JobOffer[];
+  job_assignments: JobAssignment[];
+  chat_threads: ChatThread[];
+  chat_messages: ChatMessage[];
+  ratings: Rating[];
 }
