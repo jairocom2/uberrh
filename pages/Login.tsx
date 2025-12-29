@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   }, [user, navigate]);
 
   const handleForceRestart = () => {
-    if (confirm("Isso irá apagar todos os dados locais e restaurar os usuários padrão (v9). Continuar?")) {
+    if (confirm("Isso irá apagar todos os dados locais e restaurar os usuários padrão (v11). Continuar?")) {
       clearAndRestart();
     }
   };
@@ -29,7 +29,7 @@ const Login: React.FC = () => {
     setError('');
     const success = await login(email, pass);
     if (success) navigate('/');
-    else setError('Credenciais inválidas. Clique em "RESTAURAR SISTEMA" caso o erro persista.');
+    else setError('Credenciais inválidas. Clique em "RESET V11" caso o erro persista.');
   };
 
   return (
@@ -43,22 +43,22 @@ const Login: React.FC = () => {
             onClick={handleForceRestart}
             className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-red-100 active:scale-95 transition-all"
           >
-            Limpar Cache/Reset v9
+            Reset v11.0
           </button>
         </div>
         
         <h1 className="text-4xl font-black mb-1 tracking-tighter">MeUp</h1>
-        <p className="text-gray-400 mb-10 text-sm font-bold uppercase tracking-widest">O Uber do RH • v9.0</p>
+        <p className="text-gray-400 mb-10 text-sm font-bold uppercase tracking-widest">O Uber do RH • v11.0</p>
 
         {isDbEmpty && (
           <div className="mb-8 p-6 bg-blue-600 rounded-[2rem] shadow-xl shadow-blue-500/20">
-            <p className="text-xs text-blue-100 font-black mb-4 uppercase tracking-widest">Atenção: Banco v9 Vazio</p>
+            <p className="text-xs text-blue-100 font-black mb-4 uppercase tracking-widest">Atenção: Banco v11 Vazio</p>
             <button 
               type="button"
               onClick={() => { seedDatabase(); setIsDbEmpty(false); }}
               className="w-full bg-white text-blue-600 py-4 rounded-2xl font-black text-xs shadow-md active:scale-95 transition-all uppercase"
             >
-              Inicializar Demo v9
+              Inicializar Demo v11
             </button>
           </div>
         )}
@@ -92,7 +92,7 @@ const Login: React.FC = () => {
         </form>
 
         <div className="mt-12 pt-10 border-t border-gray-100">
-          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">Acessos Rápidos (DEMO v9)</p>
+          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">Acessos Rápidos (DEMO v11)</p>
           <div className="grid grid-cols-1 gap-3">
             <QuickLoginBtn color="bg-red-50 text-red-600 border-red-100" label="Admin (admin@meup.demo)" onClick={() => {setEmail('admin@meup.demo'); setPass('Meup@123456');}} />
             <QuickLoginBtn color="bg-blue-50 text-blue-600 border-blue-100" label="Empresa (c1@empresa.com)" onClick={() => {setEmail('c1@empresa.com'); setPass('demo');}} />

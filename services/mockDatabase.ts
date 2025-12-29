@@ -2,8 +2,8 @@
 import { DbState, Profile, CompanyProfile, ProfessionalProfile } from '../types';
 import { RJ_COORDS, SKILLS_LIST } from '../constants';
 
-// Alterar esta chave força o navegador a resetar o banco local
-const STORAGE_KEY = 'meup_v9_final_fix';
+// V11 - Reset forçado para limpar qualquer inconsistência de versões anteriores
+const STORAGE_KEY = 'meup_v11_stable_prod';
 const SYNC_BASE_URL = 'https://api.keyvalue.xyz';
 
 const getInitialState = (): DbState => ({
@@ -41,7 +41,7 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-const getRoomKey = (room: string) => `meupv9_${room.trim().toLowerCase()}`;
+const getRoomKey = (room: string) => `meupv11_${room.trim().toLowerCase()}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
@@ -87,13 +87,13 @@ export const stopCloudSync = () => localStorage.removeItem('meup_sync_room');
 export const seedDatabase = () => {
   const db = getInitialState();
   
-  // Perfil Admin Master (Restaurado e Garantido)
+  // Admin Master
   db.profiles.push({
     id: 'admin-1', role: 'admin', name: 'Admin Master', 
     email: 'admin@meup.demo', phone: '21999999999', is_suspended: false, created_at: new Date().toISOString()
   });
 
-  // Perfil Empresa
+  // Empresa Demo
   const empId = 'emp-1';
   db.profiles.push({
     id: empId, role: 'empresa', name: 'Carlos Gestor', 
@@ -106,7 +106,7 @@ export const seedDatabase = () => {
     geo_lat: RJ_COORDS.Copacabana.lat, geo_lng: RJ_COORDS.Copacabana.lng, is_verified: true
   });
 
-  // Perfil Profissional
+  // Profissional Demo
   const profId = 'prof-1';
   db.profiles.push({
     id: profId, role: 'profissional', name: 'Ricardo Silva', 

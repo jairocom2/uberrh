@@ -95,8 +95,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      {/* Etiqueta de Versão (Bypass de Cache Check) */}
-      <div className="absolute top-0 right-0 z-[200] bg-red-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase">v9.0</div>
+      {/* Etiqueta de Versão v11.0 */}
+      <div className="absolute top-0 right-0 z-[200] bg-red-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase">v11.0</div>
 
       <div className="bg-blue-600 text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0">
         SISTEMA MEUP {syncRoom ? `• SALA ${syncRoom.toUpperCase()}` : '• APENAS LOCAL'}

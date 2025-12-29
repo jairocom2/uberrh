@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDb, saveDb, seedDatabase } from '../services/mockDatabase';
-import { Profile, ProfessionalProfile, CompanyProfile, JobRequest, Role, JobAssignment } from '../types';
+import { getDb, saveDb } from '../services/mockDatabase';
+import { Profile, ProfessionalProfile, CompanyProfile, JobRequest, Role } from '../types';
 import Layout from '../components/Layout';
 import { Icons, RJ_COORDS, SKILLS_LIST } from '../constants';
 
@@ -18,7 +18,6 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [viewingUser, setViewingUser] = useState<{ profile: Profile, extra: any } | null>(null);
-  const [viewingJob, setViewingJob] = useState<JobRequest | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   const refresh = () => {
@@ -82,13 +81,11 @@ const AdminDashboard: React.FC = () => {
     <Layout title="Painel de Controle">
       <div className="px-5 pb-24 space-y-6">
         
-        {/* Sumário de Operações */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="Auditados" value={compData.filter(c => c.is_verified).length + profData.filter(p => p.docs_verified).length} icon={<Icons.Check />} color="bg-green-600" />
           <StatCard label="Aguardando" value={pendentesComps.length + pendentesProfs.length} icon={<Icons.Search />} color="bg-amber-500" />
         </div>
 
-        {/* Tabs de Navegação Principal */}
         <div className="flex bg-gray-100 p-1 rounded-2xl sticky top-0 z-30 shadow-sm">
           {(['usuarios', 'pendentes', 'chamados', 'config'] as const).map(tab => (
             <button 
@@ -131,19 +128,20 @@ const AdminDashboard: React.FC = () => {
                 ))}
              </div>
 
-             {roleFilter === 'empresa' && (
-               <button 
-                onClick={() => { setRoleFilter('empresa'); setIsCreating(true); }}
-                className="w-full bg-blue-50 text-blue-600 py-4 rounded-2xl border-2 border-dashed border-blue-200 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
-               >
-                 <Icons.Plus /> CADASTRAR NOVA EMPRESA CONTRATANTE
-               </button>
-             )}
-
              <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
                 {filteredUsers.map(p => {
-                  const extra = p.role === 'profissional' ? profData.find(d => d.user_id === p.id) : compData.find(d => d.user_id === p.id);
-                  const verified = p.role === 'profissional' ? (extra as ProfessionalProfile)?.docs_verified : (extra as CompanyProfile)?.is_verified;
+                  // Forçamos o tipo any aqui para que o build do Vercel não falhe ao tentar acessar company_name ou is_verified
+                  const extra: any = p.role === 'profissional' 
+                    ? profData.find(d => d.user_id === p.id) 
+                    : compData.find(d => d.user_id === p.id);
+                  
+                  const verified = p.role === 'profissional' 
+                    ? extra?.docs_verified 
+                    : extra?.is_verified;
+                  
+                  const displayName = (p.role === 'empresa' && extra) 
+                    ? extra.company_name 
+                    : p.name;
                   
                   return (
                     <div 
@@ -158,7 +156,7 @@ const AdminDashboard: React.FC = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-black text-sm text-gray-900 leading-tight">
-                              {p.role === 'empresa' && extra ? extra.company_name : p.name}
+                              {displayName}
                             </p>
                             {verified && <div className="text-blue-500 scale-75"><Icons.Check /></div>}
                           </div>
@@ -240,7 +238,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Modal de Detalhes e Verificação */}
         {viewingUser && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewingUser(null)}></div>
@@ -248,7 +245,7 @@ const AdminDashboard: React.FC = () => {
                <div className="flex justify-between items-start mb-6">
                   <div>
                     <h2 className="text-2xl font-black text-gray-900 leading-tight">
-                      {viewingUser.profile.role === 'empresa' ? viewingUser.extra.company_name : viewingUser.profile.name}
+                      {viewingUser.profile.role === 'empresa' ? (viewingUser.extra as any).company_name : viewingUser.profile.name}
                     </h2>
                     <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">{viewingUser.profile.role}</p>
                   </div>
@@ -304,7 +301,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Modal de Criação (Customizado para Admin) */}
         {isCreating && (
           <UserCreationForm 
             onClose={() => setIsCreating(false)} 
@@ -323,7 +319,6 @@ const UserCreationForm = ({ onClose, onSave }: { onClose: () => void, onSave: an
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   
-  // Empresa extra
   const [compName, setCompName] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [segment, setSegment] = useState('Varejo');
@@ -353,7 +348,7 @@ const UserCreationForm = ({ onClose, onSave }: { onClose: () => void, onSave: an
         zip_code: '20000-000',
         geo_lat: coords.lat,
         geo_lng: coords.lng,
-        is_verified: true // Admin criando já verifica automaticamente se desejar
+        is_verified: true
       };
     } else {
       extra = {
