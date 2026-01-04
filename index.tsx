@@ -3,23 +3,22 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// VERSÃO V4 - Limpeza total e profunda
-const APP_VERSION_TAG = "V4_ULTRA_SYNC";
+// VERSÃO V5 - A mais estável para cross-device
+const APP_VERSION_TAG = "V5_PRO_SYNC_FINAL";
 const savedVersion = localStorage.getItem('meup_app_version_tag');
 
 if (savedVersion !== APP_VERSION_TAG) {
-  // Limpa tudo para garantir que não haja conflito de esquemas de dados
+  // Limpeza profunda mantendo apenas a sala de sincronia
   const room = localStorage.getItem('meup_sync_room');
   localStorage.clear();
   sessionStorage.clear();
   localStorage.setItem('meup_app_version_tag', APP_VERSION_TAG);
-  // Preserva a sala para facilitar o teste do usuário
   if (room) localStorage.setItem('meup_sync_room', room);
   
-  // Bust de cache via URL
+  // Reload limpo
   setTimeout(() => {
-    window.location.href = window.location.pathname + '?refresh=' + Date.now();
-  }, 300);
+    window.location.href = window.location.pathname + '?v5=' + Date.now();
+  }, 200);
 }
 
 const rootElement = document.getElementById('root');
