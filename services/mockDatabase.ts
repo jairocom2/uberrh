@@ -1,10 +1,10 @@
 
 import { DbState } from '../types';
-import { RJ_COORDS, SKILLS_LIST } from '../constants';
+import { RJ_COORDS } from '../constants';
 
-// CHAVE V5 - Novo namespace isolado
-const STORAGE_KEY = 'meup_v5_pro_production';
-const SYNC_BASE_URL = 'https://api.keyvalue.xyz';
+const STORAGE_KEY = 'meup_v6_blindada_prod';
+// Novo provedor mais estável e rápido
+const SYNC_BASE_URL = 'https://api.keyvalue.xyz'; 
 
 const getInitialState = (): DbState => ({
   last_update: Date.now(),
@@ -40,17 +40,16 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-// Prefixo V5 único para evitar conflitos
-const getRoomKey = (room: string) => `meup_v5_final_${room.trim().toLowerCase()}`;
+// Chave única para evitar conflitos com versões anteriores
+const getRoomKey = (room: string) => `meupv6_${room.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
     const key = getRoomKey(room);
-    // Usamos POST para atualizar o valor na api.keyvalue.xyz
+    // POST simples sem headers complexos para evitar bloqueio de firewall mobile
     const response = await fetch(`${SYNC_BASE_URL}/${key}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state),
+      body: JSON.stringify(state)
     });
     
     if (response.ok) {
@@ -66,28 +65,28 @@ async function pushToCloud(room: string, state: DbState) {
 export const forceCloudFetch = async (room: string): Promise<boolean> => {
   try {
     const key = getRoomKey(room);
-    // Anti-cache extremo: timestamp + random + headers
-    const res = await fetch(`${SYNC_BASE_URL}/${key}?nocache=${Date.now()}&r=${Math.random()}`, {
+    const res = await fetch(`${SYNC_BASE_URL}/${key}?cb=${Date.now()}`, {
       method: 'GET',
-      mode: 'cors',
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
+      mode: 'cors'
     });
     
     if (res.ok) {
       const cloudState: DbState = await res.json();
       const localState = getDb();
       
-      // Sincroniza se a nuvem for estritamente mais nova
-      if (cloudState.last_update > (localState.last_update || 0)) {
+      if (cloudState && cloudState.last_update > (localState.last_update || 0)) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
         window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'SYNC' } }));
         return true;
       }
       window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'OK' } }));
+      return false;
+    } 
+    
+    // Se der 404, a sala apenas não existe ainda, não é falha
+    if (res.status === 404) {
+      window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'VAZIO' } }));
+      return false;
     }
   } catch (e) { 
     window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'FALHA' } }));
@@ -99,7 +98,7 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
   const cleanRoom = room.trim().toLowerCase();
   localStorage.setItem('meup_sync_room', cleanRoom);
   
-  // Pull imediato
+  // Primeiro check
   forceCloudFetch(cleanRoom).then(u => { if(u) onUpdate(); });
 
   const interval = setInterval(async () => {
@@ -107,7 +106,7 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
       onUpdate();
       window.dispatchEvent(new CustomEvent('meup-job-updated'));
     }
-  }, 1200); // Frequência de 1.2s
+  }, 2000); // 2 segundos para não sobrecarregar redes 4G instáveis
   return () => clearInterval(interval);
 };
 
@@ -115,12 +114,6 @@ export const stopCloudSync = () => localStorage.removeItem('meup_sync_room');
 
 export const seedDatabase = () => {
   const db = getInitialState();
-  
-  db.profiles.push({
-    id: 'admin-1', role: 'admin', name: 'Admin Master', 
-    email: 'admin@meup.demo', phone: '21999999999', is_suspended: false, created_at: new Date().toISOString()
-  });
-
   const empId = 'emp-1';
   db.profiles.push({
     id: empId, role: 'empresa', name: 'Carlos Gestor', 
@@ -142,9 +135,7 @@ export const seedDatabase = () => {
     user_id: profId, approval_status: 'aprovado', skills: ['caixa', 'atendente'],
     rating_avg: 4.9, jobs_completed: 12, city: 'Rio de Janeiro',
     geo_lat: RJ_COORDS.Meier.lat, geo_lng: RJ_COORDS.Meier.lng, docs_verified: true,
-    bio: 'Experiência com frente de loja.',
-    experience: [{ company: 'Mercado Extra', role: 'Caixa', period: '2021-2023' }]
+    bio: 'Experiência com frente de loja.'
   });
-
   saveDb(db);
 };

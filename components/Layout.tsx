@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getDb, startCloudSync, stopCloudSync } from '../services/mockDatabase';
+import { startCloudSync, stopCloudSync } from '../services/mockDatabase';
 import { Icons } from '../constants';
 
 interface LayoutProps {
@@ -19,16 +19,17 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   const [syncRoom, setSyncRoom] = useState<string | null>(localStorage.getItem('meup_sync_room'));
   const [netLogs, setNetLogs] = useState({ up: '---', down: '---' });
 
-  // Captura sala via URL se disponível (?room=NOME)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roomParam = params.get('room');
     if (roomParam && roomParam !== syncRoom) {
       localStorage.setItem('meup_sync_room', roomParam.toLowerCase());
       setSyncRoom(roomParam.toLowerCase());
+      // Limpa a URL para não ficar recarregando
+      window.history.replaceState({}, '', window.location.pathname);
       window.location.reload();
     }
-  }, [location.search]);
+  }, [location.search, syncRoom]);
 
   useEffect(() => {
     const handleLog = (e: any) => {
@@ -58,7 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
         window.location.reload();
       }
     } else {
-      const room = prompt("CRIE OU ENTRE NUMA SALA (Ex: TESTE):");
+      const room = prompt("DIGITE O NOME DA SALA (IGUAL NOS DOIS CELULARES):");
       if (room && room.trim()) {
         const cleanRoom = room.trim().toLowerCase();
         setSyncRoom(cleanRoom);
@@ -72,12 +73,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      {/* Marcador de Versão V5 */}
-      <div className="absolute top-0 right-0 z-[200] bg-black text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">#V5-PRO</div>
+      <div className="absolute top-0 right-0 z-[200] bg-red-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">#V6-BLINDADA</div>
 
-      {/* Header Sync */}
       <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-blue-600'}`}>
-        {syncRoom ? `SALA ATIVA: ${syncRoom.toUpperCase()}` : 'MODO LOCAL - CLIQUE NO MAPA PARA SINCRONIZAR'}
+        {syncRoom ? `CONECTADO À SALA: ${syncRoom.toUpperCase()}` : 'MODO LOCAL - CLIQUE NO MAPA PARA SINCRONIZAR'}
       </div>
 
       <header className="px-5 py-3 flex items-center justify-between border-b bg-white z-10 shrink-0">
@@ -106,13 +105,14 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
         {children}
       </main>
 
-      {/* DIAGNÓSTICO DE REDE V5 NO RODAPÉ */}
-      <div className="bg-black text-[7px] text-gray-500 py-1 px-4 flex justify-between font-black uppercase tracking-widest z-[100]">
-        <div className="flex gap-3">
-          <span>UP: <span className={netLogs.up === 'OK' ? 'text-green-500' : 'text-red-500'}>{netLogs.up}</span></span>
-          <span>DOWN: <span className={netLogs.down === 'OK' || netLogs.down === 'SYNC' ? 'text-green-500' : 'text-red-500'}>{netLogs.down}</span></span>
+      <div className="bg-black text-[7px] text-gray-500 py-1.5 px-4 flex justify-between font-black uppercase tracking-widest z-[100]">
+        <div className="flex gap-4">
+          <span>UPLOAD: <span className={netLogs.up === 'OK' ? 'text-green-500' : 'text-red-500'}>{netLogs.up}</span></span>
+          <span>DOWNLOAD: <span className={['OK', 'SYNC', 'VAZIO'].includes(netLogs.down) ? 'text-green-500' : 'text-red-500'}>{netLogs.down}</span></span>
         </div>
-        <span>{new Date().toLocaleTimeString()}</span>
+        <div className="flex gap-2">
+          <span className="text-white opacity-20">PROTOCOLO V6 BLINDADO</span>
+        </div>
       </div>
 
       {showNav && (
