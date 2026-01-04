@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   }, [user, navigate]);
 
   const handleForceRestart = () => {
-    if (confirm("Reset total: Isso apagará dados locais e restaurará usuários padrão estáveis da V2. Continuar?")) {
+    if (confirm("ATENÇÃO: Isso limpará o cache de todos os testes anteriores e ativará a Versão V3 de Sincronia. Deseja continuar?")) {
       clearAndRestart();
     }
   };
@@ -29,7 +29,7 @@ const Login: React.FC = () => {
     setError('');
     const success = await login(email, pass);
     if (success) navigate('/');
-    else setError('Credenciais inválidas. Clique em RESET VERDE se o erro persistir.');
+    else setError('Credenciais inválidas. Clique no botão LARANJA acima se a sincronia falhar.');
   };
 
   return (
@@ -39,27 +39,31 @@ const Login: React.FC = () => {
           <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center shadow-xl">
             <span className="text-white font-bold text-2xl tracking-tighter">M</span>
           </div>
-          {/* BOTÃO VERDE DE RESET - INDICADOR DA V2 */}
+          
+          {/* BOTÃO DE EMERGÊNCIA LARANJA - CURA TUDO */}
           <button 
             onClick={handleForceRestart}
-            className="bg-green-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-green-600/20"
+            className="bg-orange-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-orange-500/30"
           >
-            Reset V2 Green
+            Reset Total (V3)
           </button>
         </div>
         
         <h1 className="text-4xl font-black mb-1 tracking-tighter">MeUp</h1>
-        <p className="text-gray-400 mb-10 text-sm font-bold uppercase tracking-widest">Sincronização Ativa V2</p>
+        <div className="flex items-center gap-2 mb-10">
+          <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Sincronia Ativa</p>
+          <span className="bg-gray-900 text-white text-[9px] px-2 py-0.5 rounded-full font-black">#V3-FIX</span>
+        </div>
 
         {isDbEmpty && (
-          <div className="mb-8 p-6 bg-green-600 rounded-[2rem] shadow-xl shadow-green-500/20">
-            <p className="text-xs text-green-100 font-black mb-4 uppercase tracking-widest">Banco Inicial V2</p>
+          <div className="mb-8 p-6 bg-orange-500 rounded-[2rem] shadow-xl shadow-orange-500/20">
+            <p className="text-xs text-white font-black mb-4 uppercase tracking-widest">Banco V3 Necessário</p>
             <button 
               type="button"
               onClick={() => { seedDatabase(); setIsDbEmpty(false); }}
-              className="w-full bg-white text-green-600 py-4 rounded-2xl font-black text-xs shadow-md active:scale-95 transition-all uppercase"
+              className="w-full bg-white text-orange-600 py-4 rounded-2xl font-black text-xs shadow-md active:scale-95 transition-all uppercase"
             >
-              Iniciar Sincronia Verde
+              Ativar Base V3
             </button>
           </div>
         )}
@@ -93,9 +97,8 @@ const Login: React.FC = () => {
         </form>
 
         <div className="mt-12 pt-10 border-t border-gray-100">
-          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">Contas de Teste (v2)</p>
+          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">Contas para teste em 2 aparelhos</p>
           <div className="grid grid-cols-1 gap-3">
-            <QuickLoginBtn color="bg-gray-50 text-gray-900 border-gray-200" label="Admin (admin@meup.demo)" onClick={() => {setEmail('admin@meup.demo'); setPass('Meup@123456');}} />
             <QuickLoginBtn color="bg-blue-50 text-blue-600 border-blue-100" label="Empresa (c1@empresa.com)" onClick={() => {setEmail('c1@empresa.com'); setPass('demo');}} />
             <QuickLoginBtn color="bg-green-50 text-green-600 border-green-100" label="Profissional (p1@prof.com)" onClick={() => {setEmail('p1@prof.com'); setPass('demo');}} />
           </div>

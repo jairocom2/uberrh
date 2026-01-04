@@ -3,16 +3,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// Força recarregamento se a versão do app mudar (Cache Buster)
-// Mudando para V2 para garantir que todos os dispositivos atualizem
-const CURRENT_VERSION = "GOLD_V2_GREEN";
-const savedVersion = localStorage.getItem('meup_app_version');
+// VERSÃO V3 - Mudar isso força o navegador a deletar TUDO que é velho
+const APP_VERSION_TAG = "V3_FINAL_STABLE";
+const savedVersion = localStorage.getItem('meup_app_version_tag');
 
-if (savedVersion !== CURRENT_VERSION) {
+if (savedVersion !== APP_VERSION_TAG) {
   localStorage.clear();
-  localStorage.setItem('meup_app_version', CURRENT_VERSION);
-  // Pequeno delay para garantir limpeza antes do reload
-  setTimeout(() => window.location.reload(), 200);
+  sessionStorage.clear();
+  localStorage.setItem('meup_app_version_tag', APP_VERSION_TAG);
+  // Força o navegador a esquecer o cache do site
+  setTimeout(() => {
+    window.location.href = window.location.pathname + '?v=' + Date.now();
+  }, 500);
 }
 
 const rootElement = document.getElementById('root');

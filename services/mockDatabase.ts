@@ -2,9 +2,8 @@
 import { DbState, Profile, CompanyProfile, ProfessionalProfile } from '../types';
 import { RJ_COORDS, SKILLS_LIST } from '../constants';
 
-// CHAVE UNIVERSAL V2 - Isolamento total de dados para garantir sincronia entre celulares
-const APP_VERSION = "GOLD_V2";
-const STORAGE_KEY = 'meup_universal_stable_v2_green';
+// CHAVE V3 - Garante que os celulares não tentem ler lixo de versões antigas
+const STORAGE_KEY = 'meup_v3_production_final';
 const SYNC_BASE_URL = 'https://api.keyvalue.xyz';
 
 const getInitialState = (): DbState => ({
@@ -26,7 +25,7 @@ export const getDb = (): DbState => {
 };
 
 export const clearAndRestart = () => {
-  localStorage.clear(); // Limpa tudo para garantir a nova versão
+  localStorage.clear();
   seedDatabase();
   window.location.reload();
 };
@@ -41,8 +40,8 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-// Prefixo de sala fixo e estável para a V2
-const getRoomKey = (room: string) => `meup_v2_final_${room.trim().toLowerCase()}`;
+// Prefixo V3 único para a nuvem
+const getRoomKey = (room: string) => `meup_v3_cloud_${room.trim().toLowerCase()}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
@@ -58,18 +57,17 @@ async function pushToCloud(room: string, state: DbState) {
 export const forceCloudFetch = async (room: string): Promise<boolean> => {
   try {
     const key = getRoomKey(room);
-    const res = await fetch(`${SYNC_BASE_URL}/${key}?nocache=${Date.now()}`, {
+    const res = await fetch(`${SYNC_BASE_URL}/${key}?t=${Date.now()}`, {
       cache: 'no-store'
     });
     if (res.ok) {
       const cloudState: DbState = await res.json();
       const localState = getDb();
       
-      const hasChanges = cloudState.last_update > (localState.last_update || 0) || 
-                         cloudState.job_requests.length !== localState.job_requests.length ||
-                         cloudState.job_assignments.length !== localState.job_assignments.length;
-
-      if (hasChanges) {
+      // Sincroniza se houve mudança de status ou novos registros
+      if (cloudState.last_update > (localState.last_update || 0) || 
+          cloudState.job_requests.length !== localState.job_requests.length ||
+          cloudState.job_assignments.length !== localState.job_assignments.length) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
         return true;
       }
@@ -82,11 +80,15 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
   const cleanRoom = room.trim().toLowerCase();
   localStorage.setItem('meup_sync_room', cleanRoom);
   
-  forceCloudFetch(cleanRoom).then(updated => { if(updated) onUpdate(); });
+  // Sincronia imediata
+  forceCloudFetch(cleanRoom).then(u => { if(u) onUpdate(); });
 
   const interval = setInterval(async () => {
-    if (await forceCloudFetch(cleanRoom)) onUpdate();
-  }, 1500);
+    if (await forceCloudFetch(cleanRoom)) {
+      onUpdate();
+      window.dispatchEvent(new CustomEvent('meup-job-updated'));
+    }
+  }, 1000); // 1 segundo para ser "tempo real"
   return () => clearInterval(interval);
 };
 

@@ -21,7 +21,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   
   const [syncRoom, setSyncRoom] = useState<string | null>(localStorage.getItem('meup_sync_room'));
   const [isSyncing, setIsSyncing] = useState(false);
-  const [showSyncToast, setShowSyncToast] = useState(false);
 
   const refreshActiveJob = () => {
     if (!user) return;
@@ -53,8 +52,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
       setIsSyncing(true);
       stop = startCloudSync(syncRoom, () => {
         refreshActiveJob();
-        setShowSyncToast(true);
-        setTimeout(() => setShowSyncToast(false), 2000);
         window.dispatchEvent(new CustomEvent('meup-job-updated'));
       });
     }
@@ -74,7 +71,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
         window.location.reload();
       }
     } else {
-      const room = prompt("Digite o código da sala (ex: TESTE):");
+      const room = prompt("DIGITE O NOME DA SALA (ex: BOSS):");
       if (room && room.trim()) {
         const cleanRoom = room.trim().toLowerCase();
         setSyncRoom(cleanRoom);
@@ -95,11 +92,11 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      {/* Etiqueta de Versão V2 GREEN */}
-      <div className="absolute top-0 right-0 z-[200] bg-green-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">GOLD V2 GREEN</div>
+      {/* Marcador Visual de Versão V3 */}
+      <div className="absolute top-0 right-0 z-[200] bg-gray-900 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest border-l border-b border-white/20">#V3-FIX</div>
 
-      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-700' : 'bg-blue-600'}`}>
-        SISTEMA MEUP {syncRoom ? `• SALA ${syncRoom.toUpperCase()} CONECTADA` : '• APENAS LOCAL'}
+      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-blue-600'}`}>
+        SISTEMA MEUP {syncRoom ? `• SALA ${syncRoom.toUpperCase()} ONLINE` : '• APENAS LOCAL'}
       </div>
 
       <header className="px-5 py-3 flex items-center justify-between border-b bg-white z-10 shrink-0">
@@ -115,7 +112,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
             <button 
               onClick={handleSyncToggle}
               className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${syncRoom ? 'bg-green-600 text-white shadow-xl ring-2 ring-green-100' : 'bg-gray-100 text-gray-400'}`}
-              title={syncRoom ? "ONLINE" : "OFFLINE"}
             >
               <div className={`${isSyncing && syncRoom ? 'animate-sync' : ''}`}>
                 <Icons.Map />
