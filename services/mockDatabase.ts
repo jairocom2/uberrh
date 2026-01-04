@@ -2,8 +2,8 @@
 import { DbState, Profile, CompanyProfile, ProfessionalProfile } from '../types';
 import { RJ_COORDS, SKILLS_LIST } from '../constants';
 
-// V11 - Reset forçado para limpar qualquer inconsistência de versões anteriores
-const STORAGE_KEY = 'meup_v11_stable_prod';
+// CHAVE ESTÁVEL: Não mudar esta chave para não perder sincronia entre aparelhos
+const STORAGE_KEY = 'meup_mvp_stable_v1';
 const SYNC_BASE_URL = 'https://api.keyvalue.xyz';
 
 const getInitialState = (): DbState => ({
@@ -41,7 +41,8 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-const getRoomKey = (room: string) => `meupv11_${room.trim().toLowerCase()}`;
+// Prefixo fixo para garantir que todos os aparelhos na mesma sala se vejam
+const getRoomKey = (room: string) => `meup_v1_room_${room.trim().toLowerCase()}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
@@ -63,8 +64,10 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
     if (res.ok) {
       const cloudState: DbState = await res.json();
       const localState = getDb();
+      // Sincroniza se o dado da nuvem for mais recente ou se houver mudança no número de chamados
       if (cloudState.last_update > (localState.last_update || 0) || 
-          cloudState.job_requests.length !== localState.job_requests.length) {
+          cloudState.job_requests.length !== localState.job_requests.length ||
+          cloudState.job_assignments.some((asg, idx) => asg.status !== localState.job_assignments[idx]?.status)) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
         return true;
       }
@@ -76,6 +79,12 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
 export const startCloudSync = (room: string, onUpdate: () => void) => {
   const cleanRoom = room.trim().toLowerCase();
   localStorage.setItem('meup_sync_room', cleanRoom);
+  
+  // Sincronização imediata ao entrar na sala
+  forceCloudFetch(cleanRoom).then(didUpdate => {
+    if (didUpdate) onUpdate();
+  });
+
   const interval = setInterval(async () => {
     if (await forceCloudFetch(cleanRoom)) onUpdate();
   }, 2000);

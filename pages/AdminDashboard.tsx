@@ -130,23 +130,22 @@ const AdminDashboard: React.FC = () => {
 
              <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
                 {filteredUsers.map(p => {
-                  // Forçamos o tipo any aqui para que o build do Vercel não falhe ao tentar acessar company_name ou is_verified
-                  const extra: any = p.role === 'profissional' 
+                  const pExtra: any = p.role === 'profissional' 
                     ? profData.find(d => d.user_id === p.id) 
                     : compData.find(d => d.user_id === p.id);
                   
                   const verified = p.role === 'profissional' 
-                    ? extra?.docs_verified 
-                    : extra?.is_verified;
+                    ? pExtra?.docs_verified 
+                    : pExtra?.is_verified;
                   
-                  const displayName = (p.role === 'empresa' && extra) 
-                    ? extra.company_name 
+                  const displayName = (p.role === 'empresa' && pExtra) 
+                    ? pExtra.company_name 
                     : p.name;
                   
                   return (
                     <div 
                       key={p.id} 
-                      onClick={() => setViewingUser({ profile: p, extra })}
+                      onClick={() => setViewingUser({ profile: p, extra: pExtra })}
                       className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 active:bg-gray-100 transition-all cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
