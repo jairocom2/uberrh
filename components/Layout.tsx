@@ -17,7 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   const location = useLocation();
   
   const [syncRoom, setSyncRoom] = useState<string | null>(localStorage.getItem('meup_sync_room'));
-  const [netLogs, setNetLogs] = useState({ up: '---', down: '---' });
+  const [netLogs, setNetLogs] = useState({ up: '---', down: '---', upMsg: '', downMsg: '' });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -25,7 +25,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
     if (roomParam && roomParam !== syncRoom) {
       localStorage.setItem('meup_sync_room', roomParam.toLowerCase());
       setSyncRoom(roomParam.toLowerCase());
-      // Limpa a URL para não ficar recarregando
       window.history.replaceState({}, '', window.location.pathname);
       window.location.reload();
     }
@@ -33,8 +32,12 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   useEffect(() => {
     const handleLog = (e: any) => {
-      const { type, status } = e.detail;
-      setNetLogs(prev => ({ ...prev, [type.toLowerCase()]: status }));
+      const { type, status, msg } = e.detail;
+      setNetLogs(prev => ({ 
+        ...prev, 
+        [type.toLowerCase()]: status,
+        [type.toLowerCase() + 'Msg']: msg || ''
+      }));
     };
     window.addEventListener('meup-net-log', handleLog);
     
@@ -59,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
         window.location.reload();
       }
     } else {
-      const room = prompt("DIGITE O NOME DA SALA (IGUAL NOS DOIS CELULARES):");
+      const room = prompt("DIGITE O NOME DA SALA:");
       if (room && room.trim()) {
         const cleanRoom = room.trim().toLowerCase();
         setSyncRoom(cleanRoom);
@@ -73,10 +76,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      <div className="absolute top-0 right-0 z-[200] bg-red-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">#V6-BLINDADA</div>
+      <div className="absolute top-0 right-0 z-[200] bg-blue-700 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">#V7-ULTRA</div>
 
-      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-blue-600'}`}>
-        {syncRoom ? `CONECTADO À SALA: ${syncRoom.toUpperCase()}` : 'MODO LOCAL - CLIQUE NO MAPA PARA SINCRONIZAR'}
+      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-gray-400'}`}>
+        {syncRoom ? `SALA: ${syncRoom.toUpperCase()}` : 'SEM SINCRONIA - CLIQUE NO MAPA'}
       </div>
 
       <header className="px-5 py-3 flex items-center justify-between border-b bg-white z-10 shrink-0">
@@ -105,13 +108,22 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
         {children}
       </main>
 
-      <div className="bg-black text-[7px] text-gray-500 py-1.5 px-4 flex justify-between font-black uppercase tracking-widest z-[100]">
+      {/* RODAPÉ DIAGNÓSTICO V7 */}
+      <div className="bg-black text-[7px] text-gray-500 py-2 px-4 flex justify-between font-black uppercase tracking-widest z-[100] border-t border-white/5">
         <div className="flex gap-4">
-          <span>UPLOAD: <span className={netLogs.up === 'OK' ? 'text-green-500' : 'text-red-500'}>{netLogs.up}</span></span>
-          <span>DOWNLOAD: <span className={['OK', 'SYNC', 'VAZIO'].includes(netLogs.down) ? 'text-green-500' : 'text-red-500'}>{netLogs.down}</span></span>
+          <div className="flex items-center gap-1">
+            <span>UP:</span>
+            <span className={netLogs.up === 'OK' ? 'text-green-500' : 'text-red-500'}>{netLogs.up}</span>
+            {netLogs.up === 'FALHA' && <button onClick={() => alert(netLogs.upMsg)} className="bg-red-900 text-white px-1 rounded">ERRO</button>}
+          </div>
+          <div className="flex items-center gap-1">
+            <span>DOWN:</span>
+            <span className={['OK', 'SYNC', 'NEW'].includes(netLogs.down) ? 'text-green-500' : 'text-red-500'}>{netLogs.down}</span>
+            {netLogs.down === 'FALHA' && <button onClick={() => alert(netLogs.downMsg)} className="bg-red-900 text-white px-1 rounded">ERRO</button>}
+          </div>
         </div>
         <div className="flex gap-2">
-          <span className="text-white opacity-20">PROTOCOLO V6 BLINDADO</span>
+          <span className="text-white opacity-20">V7_AZURE_PROTOCOL</span>
         </div>
       </div>
 

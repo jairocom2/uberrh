@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   }, [user, navigate]);
 
   const handleForceRestart = () => {
-    if (confirm("LIMPEZA V5: Isso garante que os dois aparelhos usem o novo sistema de rede. Continuar?")) {
+    if (confirm("LIMPEZA V7: Isso garante que o novo protocolo Microsoft/Azure seja ativado. Continuar?")) {
       clearAndRestart();
     }
   };
@@ -28,7 +28,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     const success = await login(email, pass);
     if (success) navigate('/');
-    else setError('Erro de login. Tente o RESET V5 abaixo.');
+    else setError('Erro de login. Tente o RESET V7 abaixo.');
   };
 
   return (
@@ -41,16 +41,16 @@ const Login: React.FC = () => {
           
           <button 
             onClick={handleForceRestart}
-            className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+            className="bg-red-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
           >
-            Reset V5
+            Reset V7
           </button>
         </div>
         
         <h1 className="text-4xl font-black mb-1 tracking-tighter">MeUp</h1>
         <div className="flex items-center gap-2 mb-10">
-          <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Conexão V5</p>
-          <span className="bg-green-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">ONLINE</span>
+          <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Protocolo Ultra</p>
+          <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">V7 ACTIVE</span>
         </div>
 
         {isDbEmpty && (
@@ -60,7 +60,7 @@ const Login: React.FC = () => {
               onClick={() => { seedDatabase(); setIsDbEmpty(false); }}
               className="w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase"
             >
-              Ativar Base V5
+              Ativar Base V7
             </button>
           </div>
         )}

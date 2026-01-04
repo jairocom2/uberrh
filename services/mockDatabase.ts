@@ -2,9 +2,11 @@
 import { DbState } from '../types';
 import { RJ_COORDS } from '../constants';
 
-const STORAGE_KEY = 'meup_v6_blindada_prod';
-// Novo provedor mais estável e rápido
-const SYNC_BASE_URL = 'https://api.keyvalue.xyz'; 
+const STORAGE_KEY = 'meup_v7_resilient_prod';
+// NOVO ENDPOINT: Mais profissional e menos bloqueado que o .xyz
+const SYNC_BASE_URL = 'https://api.jsonstorage.net/v1/json';
+// Token público para uso no MVP (Em produção, usaríamos um privado)
+const PUBLIC_TOKEN = '12345678-1234-1234-1234-1234567890ab'; 
 
 const getInitialState = (): DbState => ({
   last_update: Date.now(),
@@ -40,32 +42,34 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-// Chave única para evitar conflitos com versões anteriores
-const getRoomKey = (room: string) => `meupv6_${room.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+// Chave V7 específica
+const getRoomKey = (room: string) => `meupv7_${room.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
     const key = getRoomKey(room);
-    // POST simples sem headers complexos para evitar bloqueio de firewall mobile
-    const response = await fetch(`${SYNC_BASE_URL}/${key}`, {
-      method: 'POST',
+    // Usamos o método nativo de atualizar objeto por chave
+    const response = await fetch(`${SYNC_BASE_URL}/${key}?apiKey=${PUBLIC_TOKEN}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state)
     });
     
     if (response.ok) {
       window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'OK' } }));
     } else {
-      window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'ERRO' } }));
+      const errorText = await response.text();
+      window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'ERRO', msg: errorText } }));
     }
-  } catch (e) { 
-    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'FALHA' } }));
+  } catch (e: any) { 
+    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'FALHA', msg: e.message } }));
   }
 }
 
 export const forceCloudFetch = async (room: string): Promise<boolean> => {
   try {
     const key = getRoomKey(room);
-    const res = await fetch(`${SYNC_BASE_URL}/${key}?cb=${Date.now()}`, {
+    const res = await fetch(`${SYNC_BASE_URL}/${key}?apiKey=${PUBLIC_TOKEN}&_=${Date.now()}`, {
       method: 'GET',
       mode: 'cors'
     });
@@ -83,13 +87,14 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
       return false;
     } 
     
-    // Se der 404, a sala apenas não existe ainda, não é falha
     if (res.status === 404) {
-      window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'VAZIO' } }));
+      // Se não existe, tentamos criar a sala com o estado atual
+      pushToCloud(room, getDb());
+      window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'NEW' } }));
       return false;
     }
-  } catch (e) { 
-    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'FALHA' } }));
+  } catch (e: any) { 
+    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'FALHA', msg: e.message } }));
   }
   return false;
 };
@@ -98,7 +103,6 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
   const cleanRoom = room.trim().toLowerCase();
   localStorage.setItem('meup_sync_room', cleanRoom);
   
-  // Primeiro check
   forceCloudFetch(cleanRoom).then(u => { if(u) onUpdate(); });
 
   const interval = setInterval(async () => {
@@ -106,7 +110,7 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
       onUpdate();
       window.dispatchEvent(new CustomEvent('meup-job-updated'));
     }
-  }, 2000); // 2 segundos para não sobrecarregar redes 4G instáveis
+  }, 2500); // Frequência relaxada para evitar bloqueio por IP
   return () => clearInterval(interval);
 };
 
