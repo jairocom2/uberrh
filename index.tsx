@@ -3,18 +3,23 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// VERSÃO V3 - Mudar isso força o navegador a deletar TUDO que é velho
-const APP_VERSION_TAG = "V3_FINAL_STABLE";
+// VERSÃO V4 - Limpeza total e profunda
+const APP_VERSION_TAG = "V4_ULTRA_SYNC";
 const savedVersion = localStorage.getItem('meup_app_version_tag');
 
 if (savedVersion !== APP_VERSION_TAG) {
+  // Limpa tudo para garantir que não haja conflito de esquemas de dados
+  const room = localStorage.getItem('meup_sync_room');
   localStorage.clear();
   sessionStorage.clear();
   localStorage.setItem('meup_app_version_tag', APP_VERSION_TAG);
-  // Força o navegador a esquecer o cache do site
+  // Preserva a sala para facilitar o teste do usuário
+  if (room) localStorage.setItem('meup_sync_room', room);
+  
+  // Bust de cache via URL
   setTimeout(() => {
-    window.location.href = window.location.pathname + '?v=' + Date.now();
-  }, 500);
+    window.location.href = window.location.pathname + '?refresh=' + Date.now();
+  }, 300);
 }
 
 const rootElement = document.getElementById('root');

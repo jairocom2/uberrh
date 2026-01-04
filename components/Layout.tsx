@@ -17,39 +17,35 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   const navigate = useNavigate();
   const location = useLocation();
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [activeStatus, setActiveStatus] = useState<JobAssignment['status'] | null>(null);
   
   const [syncRoom, setSyncRoom] = useState<string | null>(localStorage.getItem('meup_sync_room'));
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'sending' | 'receiving' | 'error'>('idle');
 
   const refreshActiveJob = () => {
     if (!user) return;
     const db = getDb();
     let jobId: string | null = null;
-    let status: JobAssignment['status'] | null = null;
 
     if (user.role === 'profissional') {
       const activeAsg = db.job_assignments.find(a => a.professional_id === user.id && a.status !== 'finalizado');
-      if (activeAsg) { jobId = activeAsg.job_id; status = activeAsg.status; }
+      if (activeAsg) jobId = activeAsg.job_id;
     } else if (user.role === 'empresa') {
       const activeJob = db.job_requests.find(j => j.company_id === user.id && (j.status === 'match_confirmado' || j.status === 'em_andamento'));
-      if (activeJob) {
-        jobId = activeJob.id;
-        const asg = db.job_assignments.find(a => a.job_id === activeJob.id);
-        if (asg) status = asg.status;
-      }
+      if (activeJob) jobId = activeJob.id;
     }
     setActiveJobId(jobId);
-    setActiveStatus(status);
   };
 
   useEffect(() => {
     refreshActiveJob();
+    
+    // Escuta eventos de sincronia
+    const handleSync = (e: any) => setSyncStatus(e.detail);
+    window.addEventListener('meup-sync-status', handleSync);
     window.addEventListener('meup-job-updated', refreshActiveJob);
     
     let stop: (() => void) | undefined;
     if (syncRoom) {
-      setIsSyncing(true);
       stop = startCloudSync(syncRoom, () => {
         refreshActiveJob();
         window.dispatchEvent(new CustomEvent('meup-job-updated'));
@@ -57,6 +53,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
     }
 
     return () => {
+      window.removeEventListener('meup-sync-status', handleSync);
       window.removeEventListener('meup-job-updated', refreshActiveJob);
       if (stop) stop();
     };
@@ -67,7 +64,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
       if (confirm("Sair da sala de sincronização?")) {
         stopCloudSync();
         setSyncRoom(null);
-        setIsSyncing(false);
         window.location.reload();
       }
     } else {
@@ -92,11 +88,20 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      {/* Marcador Visual de Versão V3 */}
-      <div className="absolute top-0 right-0 z-[200] bg-gray-900 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest border-l border-b border-white/20">#V3-FIX</div>
+      {/* Marcador Visual #V4-ULTRA */}
+      <div className="absolute top-0 right-0 z-[200] bg-black text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest border-l border-b border-white/20">#V4-ULTRA</div>
 
-      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-blue-600'}`}>
-        SISTEMA MEUP {syncRoom ? `• SALA ${syncRoom.toUpperCase()} ONLINE` : '• APENAS LOCAL'}
+      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors flex items-center justify-center gap-2 ${syncRoom ? 'bg-green-600' : 'bg-blue-600'}`}>
+        <span>SISTEMA MEUP {syncRoom ? `• SALA ${syncRoom.toUpperCase()}` : '• APENAS LOCAL'}</span>
+        
+        {/* LED DE STATUS DE SINCRONIA */}
+        {syncRoom && (
+          <div className={`w-1.5 h-1.5 rounded-full ${
+            syncStatus === 'sending' ? 'bg-white animate-pulse' : 
+            syncStatus === 'receiving' ? 'bg-yellow-300 animate-bounce' : 
+            syncStatus === 'error' ? 'bg-red-500' : 'bg-green-300 opacity-50'
+          }`}></div>
+        )}
       </div>
 
       <header className="px-5 py-3 flex items-center justify-between border-b bg-white z-10 shrink-0">
@@ -111,11 +116,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
           {user && (
             <button 
               onClick={handleSyncToggle}
-              className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${syncRoom ? 'bg-green-600 text-white shadow-xl ring-2 ring-green-100' : 'bg-gray-100 text-gray-400'}`}
+              className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${syncRoom ? 'bg-green-600 text-white shadow-xl' : 'bg-gray-100 text-gray-400'}`}
             >
-              <div className={`${isSyncing && syncRoom ? 'animate-sync' : ''}`}>
-                <Icons.Map />
-              </div>
+              <Icons.Map />
               {syncRoom && <span className="text-[10px] font-black uppercase">{syncRoom}</span>}
             </button>
           )}
