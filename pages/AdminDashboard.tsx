@@ -170,73 +170,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'pendentes' && (
-          <div className="space-y-6 animate-in fade-in duration-300 pb-10">
-             <div>
-               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Empresas Aguardando Validação ({pendentesComps.length})</h3>
-               <div className="space-y-3">
-                {pendentesComps.map(c => {
-                  const user = profiles.find(u => u.id === c.user_id);
-                  return (
-                    <div key={c.user_id} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-black text-gray-900 leading-none mb-1">{c.company_name}</h4>
-                          <p className="text-[10px] font-bold text-gray-400">CNPJ: {c.cnpj}</p>
-                        </div>
-                        <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Pendente</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 py-3 border-y border-gray-50">
-                         <div>
-                            <p className="text-[8px] font-black text-gray-300 uppercase">Segmento</p>
-                            <p className="text-[10px] font-bold">{c.segment}</p>
-                         </div>
-                         <div>
-                            <p className="text-[8px] font-black text-gray-300 uppercase">Localização</p>
-                            <p className="text-[10px] font-bold">{c.address}</p>
-                         </div>
-                      </div>
-                      <button 
-                        onClick={() => setViewingUser({ profile: user!, extra: c })}
-                        className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all"
-                      >
-                        Verificar Documentação
-                      </button>
-                    </div>
-                  );
-                })}
-                {pendentesComps.length === 0 && <p className="text-center text-xs text-gray-300 font-bold italic py-4">Nenhuma empresa pendente.</p>}
-               </div>
-             </div>
-
-             <div>
-               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Profissionais Aguardando Aprovação ({pendentesProfs.length})</h3>
-               <div className="space-y-3">
-                {pendentesProfs.map(p => {
-                  const user = profiles.find(pr => pr.id === p.user_id);
-                  return (
-                    <div key={p.user_id} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
-                        <div className="flex justify-between">
-                          <h4 className="font-black text-gray-900">{user?.name}</h4>
-                          <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Pendente</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {p.skills.map(s => <span key={s} className="text-[8px] bg-gray-50 px-2 py-1 rounded-lg font-bold uppercase">{s}</span>)}
-                        </div>
-                        <button 
-                          onClick={() => setViewingUser({ profile: user!, extra: p })}
-                          className="w-full bg-black text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                        >
-                          Auditar Currículo
-                        </button>
-                    </div>
-                  );
-                })}
-               </div>
-             </div>
-          </div>
-        )}
-
         {viewingUser && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewingUser(null)}></div>
@@ -249,10 +182,10 @@ const AdminDashboard: React.FC = () => {
                     <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">{viewingUser.profile.role}</p>
                   </div>
                   <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                    (viewingUser.profile.role === 'empresa' ? viewingUser.extra.is_verified : viewingUser.extra.docs_verified) 
+                    (viewingUser.profile.role === 'empresa' ? (viewingUser.extra as any).is_verified : (viewingUser.extra as any).docs_verified) 
                     ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
                   }`}>
-                    {(viewingUser.profile.role === 'empresa' ? viewingUser.extra.is_verified : viewingUser.extra.docs_verified) ? 'Verificado' : 'Em Auditoria'}
+                    {(viewingUser.profile.role === 'empresa' ? (viewingUser.extra as any).is_verified : (viewingUser.extra as any).docs_verified) ? 'Verificado' : 'Em Auditoria'}
                   </div>
                </div>
 
@@ -265,32 +198,32 @@ const AdminDashboard: React.FC = () => {
                   {viewingUser.profile.role === 'empresa' && (
                     <div className="space-y-4 pt-4 border-t border-gray-100">
                       <div className="grid grid-cols-2 gap-4">
-                        <DetailRow label="Razão Social" value={viewingUser.extra.company_name} />
-                        <DetailRow label="CNPJ" value={viewingUser.extra.cnpj} />
-                        <DetailRow label="Segmento" value={viewingUser.extra.segment} />
-                        <DetailRow label="Bairro" value={viewingUser.extra.address} />
+                        <DetailRow label="Razão Social" value={(viewingUser.extra as any).company_name} />
+                        <DetailRow label="CNPJ" value={(viewingUser.extra as any).cnpj} />
+                        <DetailRow label="Segmento" value={(viewingUser.extra as any).segment} />
+                        <DetailRow label="Bairro" value={(viewingUser.extra as any).address} />
                       </div>
-                      <DetailRow label="Logradouro" value={viewingUser.extra.full_address} />
+                      <DetailRow label="Logradouro" value={(viewingUser.extra as any).full_address} />
                       <button 
                         onClick={() => toggleVerification(viewingUser.profile.id, 'empresa')}
-                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${viewingUser.extra.is_verified ? 'bg-red-50 text-red-600' : 'bg-blue-600 text-white shadow-xl shadow-blue-600/20'}`}
+                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${(viewingUser.extra as any).is_verified ? 'bg-red-50 text-red-600' : 'bg-blue-600 text-white shadow-xl shadow-blue-600/20'}`}
                       >
-                        {viewingUser.extra.is_verified ? 'REVOGAR VERIFICAÇÃO' : 'APROVAR E VERIFICAR EMPRESA'}
+                        {(viewingUser.extra as any).is_verified ? 'REVOGAR VERIFICAÇÃO' : 'APROVAR E VERIFICAR EMPRESA'}
                       </button>
                     </div>
                   )}
 
                   {viewingUser.profile.role === 'profissional' && (
                     <div className="space-y-4 pt-4 border-t border-gray-100">
-                      <DetailRow label="Resumo" value={viewingUser.extra.bio || 'Sem bio'} />
+                      <DetailRow label="Resumo" value={(viewingUser.extra as any).bio || 'Sem bio'} />
                       <div className="flex flex-wrap gap-2">
-                         {viewingUser.extra.skills.map((s:string) => <span key={s} className="bg-gray-100 px-3 py-1 rounded-lg text-[9px] font-black uppercase">{s}</span>)}
+                         {(viewingUser.extra as any).skills.map((s:string) => <span key={s} className="bg-gray-100 px-3 py-1 rounded-lg text-[9px] font-black uppercase">{s}</span>)}
                       </div>
                       <button 
                         onClick={() => toggleVerification(viewingUser.profile.id, 'profissional')}
-                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${viewingUser.extra.docs_verified ? 'bg-red-50 text-red-600' : 'bg-green-600 text-white shadow-xl shadow-green-600/20'}`}
+                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${(viewingUser.extra as any).docs_verified ? 'bg-red-50 text-red-600' : 'bg-green-600 text-white shadow-xl shadow-green-600/20'}`}
                       >
-                        {viewingUser.extra.docs_verified ? 'REVOGAR APROVAÇÃO' : 'APROVAR E LIBERAR PERFIL'}
+                        {(viewingUser.extra as any).docs_verified ? 'REVOGAR APROVAÇÃO' : 'APROVAR E LIBERAR PERFIL'}
                       </button>
                     </div>
                   )}

@@ -2,8 +2,9 @@
 import { DbState, Profile, CompanyProfile, ProfessionalProfile } from '../types';
 import { RJ_COORDS, SKILLS_LIST } from '../constants';
 
-// CHAVE ESTÁVEL: Não mudar esta chave para não perder sincronia entre aparelhos
-const STORAGE_KEY = 'meup_mvp_stable_v1';
+// CHAVE UNIVERSAL V2 - Isolamento total de dados para garantir sincronia entre celulares
+const APP_VERSION = "GOLD_V2";
+const STORAGE_KEY = 'meup_universal_stable_v2_green';
 const SYNC_BASE_URL = 'https://api.keyvalue.xyz';
 
 const getInitialState = (): DbState => ({
@@ -25,8 +26,7 @@ export const getDb = (): DbState => {
 };
 
 export const clearAndRestart = () => {
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem('meup_auth');
+  localStorage.clear(); // Limpa tudo para garantir a nova versão
   seedDatabase();
   window.location.reload();
 };
@@ -41,8 +41,8 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-// Prefixo fixo para garantir que todos os aparelhos na mesma sala se vejam
-const getRoomKey = (room: string) => `meup_v1_room_${room.trim().toLowerCase()}`;
+// Prefixo de sala fixo e estável para a V2
+const getRoomKey = (room: string) => `meup_v2_final_${room.trim().toLowerCase()}`;
 
 async function pushToCloud(room: string, state: DbState) {
   try {
@@ -64,10 +64,12 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
     if (res.ok) {
       const cloudState: DbState = await res.json();
       const localState = getDb();
-      // Sincroniza se o dado da nuvem for mais recente ou se houver mudança no número de chamados
-      if (cloudState.last_update > (localState.last_update || 0) || 
-          cloudState.job_requests.length !== localState.job_requests.length ||
-          cloudState.job_assignments.some((asg, idx) => asg.status !== localState.job_assignments[idx]?.status)) {
+      
+      const hasChanges = cloudState.last_update > (localState.last_update || 0) || 
+                         cloudState.job_requests.length !== localState.job_requests.length ||
+                         cloudState.job_assignments.length !== localState.job_assignments.length;
+
+      if (hasChanges) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
         return true;
       }
@@ -80,14 +82,11 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
   const cleanRoom = room.trim().toLowerCase();
   localStorage.setItem('meup_sync_room', cleanRoom);
   
-  // Sincronização imediata ao entrar na sala
-  forceCloudFetch(cleanRoom).then(didUpdate => {
-    if (didUpdate) onUpdate();
-  });
+  forceCloudFetch(cleanRoom).then(updated => { if(updated) onUpdate(); });
 
   const interval = setInterval(async () => {
     if (await forceCloudFetch(cleanRoom)) onUpdate();
-  }, 2000);
+  }, 1500);
   return () => clearInterval(interval);
 };
 
@@ -96,13 +95,11 @@ export const stopCloudSync = () => localStorage.removeItem('meup_sync_room');
 export const seedDatabase = () => {
   const db = getInitialState();
   
-  // Admin Master
   db.profiles.push({
     id: 'admin-1', role: 'admin', name: 'Admin Master', 
     email: 'admin@meup.demo', phone: '21999999999', is_suspended: false, created_at: new Date().toISOString()
   });
 
-  // Empresa Demo
   const empId = 'emp-1';
   db.profiles.push({
     id: empId, role: 'empresa', name: 'Carlos Gestor', 
@@ -115,7 +112,6 @@ export const seedDatabase = () => {
     geo_lat: RJ_COORDS.Copacabana.lat, geo_lng: RJ_COORDS.Copacabana.lng, is_verified: true
   });
 
-  // Profissional Demo
   const profId = 'prof-1';
   db.profiles.push({
     id: profId, role: 'profissional', name: 'Ricardo Silva', 
