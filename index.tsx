@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-const APP_VERSION_TAG = "V9_ULTIMATE_SMART";
+const APP_VERSION_TAG = "V11_RESILIENT_FINAL";
 const savedVersion = localStorage.getItem('meup_app_version_tag');
 
 if (savedVersion !== APP_VERSION_TAG) {
@@ -14,8 +14,7 @@ if (savedVersion !== APP_VERSION_TAG) {
   if (room) localStorage.setItem('meup_sync_room', room);
   
   setTimeout(() => {
-    // Redireciona com query param para garantir que o service worker/cache não segure a versão antiga
-    window.location.href = window.location.pathname + '?v9=' + Date.now();
+    window.location.href = window.location.pathname + '?v11=' + Date.now();
   }, 200);
 }
 
