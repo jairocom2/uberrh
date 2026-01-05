@@ -17,7 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   const location = useLocation();
   
   const [syncRoom, setSyncRoom] = useState<string | null>(localStorage.getItem('meup_sync_room'));
-  const [netLogs, setNetLogs] = useState({ up: '---', down: '---', upMsg: '', downMsg: '' });
+  const [netLogs, setNetLogs] = useState({ up: '---', down: '---' });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -32,12 +32,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 
   useEffect(() => {
     const handleLog = (e: any) => {
-      const { type, status, msg } = e.detail;
-      setNetLogs(prev => ({ 
-        ...prev, 
-        [type.toLowerCase()]: status,
-        [type.toLowerCase() + 'Msg']: msg || ''
-      }));
+      const { type, status } = e.detail;
+      setNetLogs(prev => ({ ...prev, [type.toLowerCase()]: status }));
     };
     window.addEventListener('meup-net-log', handleLog);
     
@@ -55,84 +51,70 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
   }, [user, syncRoom]);
 
   const handleSyncToggle = () => {
-    if (syncRoom) {
-      if (confirm("Desconectar desta sala?")) {
-        stopCloudSync();
-        setSyncRoom(null);
-        window.location.reload();
-      }
-    } else {
-      const room = prompt("DIGITE O NOME DA SALA:");
-      if (room && room.trim()) {
-        const cleanRoom = room.trim().toLowerCase();
-        setSyncRoom(cleanRoom);
-        localStorage.setItem('meup_sync_room', cleanRoom);
-        window.location.reload();
-      }
+    const room = prompt("SALA DE SINCRONIA (EX: MEUP1):");
+    if (room && room.trim()) {
+      const cleanRoom = room.trim().toLowerCase();
+      setSyncRoom(cleanRoom);
+      localStorage.setItem('meup_sync_room', cleanRoom);
+      window.location.reload();
     }
   };
 
   const showNav = user && !['/login', '/onboarding'].includes(location.pathname);
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x">
-      <div className="absolute top-0 right-0 z-[200] bg-blue-700 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">#V7-ULTRA</div>
-
-      <div className={`text-white text-[8px] py-1 text-center font-black z-50 uppercase tracking-[0.2em] shrink-0 transition-colors ${syncRoom ? 'bg-green-600' : 'bg-gray-400'}`}>
-        {syncRoom ? `SALA: ${syncRoom.toUpperCase()}` : 'SEM SINCRONIA - CLIQUE NO MAPA'}
+    <div className="h-[100dvh] w-full flex flex-col bg-white shadow-xl relative overflow-hidden mx-auto max-w-md border-x font-sans">
+      {/* Status Bar Estilo Mobile */}
+      <div className={`flex items-center justify-between px-6 py-1 z-[100] transition-colors ${syncRoom ? 'bg-black text-green-400' : 'bg-gray-100 text-gray-400'}`}>
+        <div className="flex items-center gap-2">
+           <div className={`w-1.5 h-1.5 rounded-full ${syncRoom ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
+           <span className="text-[9px] font-black uppercase tracking-widest">
+             {syncRoom ? `SALA: ${syncRoom.toUpperCase()}` : 'OFFLINE MODE'}
+           </span>
+        </div>
+        <div className="flex gap-3 text-[8px] font-bold">
+          <span>UP: {netLogs.up}</span>
+          <span>DOWN: {netLogs.down}</span>
+        </div>
       </div>
 
-      <header className="px-5 py-3 flex items-center justify-between border-b bg-white z-10 shrink-0">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-white font-black text-base">M</span>
+      <header className="px-6 py-4 flex items-center justify-between bg-white z-10 shrink-0">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-10 h-10 bg-black rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3">
+            <span className="text-white font-black text-xl">M</span>
           </div>
-          <h1 className="text-xl font-black tracking-tighter">MeUp</h1>
+          <div>
+            <h1 className="text-2xl font-black tracking-tighter leading-none">MeUp</h1>
+            <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.3em] mt-1">Uber do RH</p>
+          </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button 
             onClick={handleSyncToggle}
-            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${syncRoom ? 'bg-green-600 text-white shadow-xl' : 'bg-gray-100 text-gray-400'}`}
+            className={`w-12 h-12 rounded-2xl transition-all flex items-center justify-center shadow-sm ${syncRoom ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}
           >
             <Icons.Map />
-            {syncRoom && <span className="text-[10px] font-black uppercase">{syncRoom}</span>}
           </button>
           {user && (
-            <button onClick={logout} className="p-2 text-gray-300 ml-1"><Icons.LogOut /></button>
+            <button onClick={logout} className="w-12 h-12 bg-gray-50 text-gray-300 rounded-2xl flex items-center justify-center border border-gray-100">
+              <Icons.LogOut />
+            </button>
           )}
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto relative flex flex-col no-scrollbar bg-gray-50/20">
+      <main className="flex-1 overflow-y-auto relative flex flex-col no-scrollbar bg-white">
         {children}
       </main>
 
-      {/* RODAPÉ DIAGNÓSTICO V7 */}
-      <div className="bg-black text-[7px] text-gray-500 py-2 px-4 flex justify-between font-black uppercase tracking-widest z-[100] border-t border-white/5">
-        <div className="flex gap-4">
-          <div className="flex items-center gap-1">
-            <span>UP:</span>
-            <span className={netLogs.up === 'OK' ? 'text-green-500' : 'text-red-500'}>{netLogs.up}</span>
-            {netLogs.up === 'FALHA' && <button onClick={() => alert(netLogs.upMsg)} className="bg-red-900 text-white px-1 rounded">ERRO</button>}
-          </div>
-          <div className="flex items-center gap-1">
-            <span>DOWN:</span>
-            <span className={['OK', 'SYNC', 'NEW'].includes(netLogs.down) ? 'text-green-500' : 'text-red-500'}>{netLogs.down}</span>
-            {netLogs.down === 'FALHA' && <button onClick={() => alert(netLogs.downMsg)} className="bg-red-900 text-white px-1 rounded">ERRO</button>}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <span className="text-white opacity-20">V7_AZURE_PROTOCOL</span>
-        </div>
-      </div>
-
       {showNav && (
-        <nav className="bg-white border-t px-4 py-2 flex items-center justify-around z-50 shrink-0 pb-safe shadow-2xl">
-          <NavLink icon={<Icons.Home />} label="Início" active={true} onClick={() => navigate('/')} />
+        <nav className="bg-white border-t border-gray-100 px-8 py-4 flex items-center justify-around z-50 shrink-0 pb-safe-bottom shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+          <NavLink icon={<Icons.Home />} label="Início" active={location.pathname.includes('dashboard')} onClick={() => navigate('/')} />
           {user.role === 'empresa' && (
-            <NavLink icon={<Icons.Plus />} label="Novo" active={false} onClick={() => navigate('/empresa/novo-chamado')} />
+            <NavLink icon={<Icons.Plus />} label="Novo" active={location.pathname.includes('novo')} onClick={() => navigate('/empresa/novo-chamado')} />
           )}
+          <NavLink icon={<Icons.Chat />} label="Chats" active={false} onClick={() => {}} />
           <NavLink icon={<Icons.User />} label="Perfil" active={false} onClick={() => {}} />
         </nav>
       )}
@@ -141,9 +123,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, noPadding = false }) =
 };
 
 const NavLink = ({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick: () => void }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-0.5 px-3 py-1 transition-all active:scale-90 ${active ? 'text-black' : 'text-gray-300'}`}>
-    <div className={`${active ? 'scale-110' : 'scale-100'}`}>{icon}</div>
-    <span className={`text-[9px] font-black uppercase tracking-tighter ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all active:scale-90 ${active ? 'text-black' : 'text-gray-300'}`}>
+    <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'scale-100'}`}>{icon}</div>
+    <span className={`text-[10px] font-black uppercase tracking-tight ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
   </button>
 );
 
