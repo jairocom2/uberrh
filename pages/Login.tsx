@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   }, [user, navigate]);
 
   const handleForceRestart = () => {
-    if (confirm("UPGRADE V9: Isso ativará o protocolo Smart Sync (PUT/POST). Deseja limpar os dados e atualizar?")) {
+    if (confirm("UPGRADE V10: Ativar Protocolo Silent Sync e Layout Resiliente?")) {
       clearAndRestart();
     }
   };
@@ -28,7 +28,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     const success = await login(email, pass);
     if (success) navigate('/');
-    else setError('Erro de login. Tente o RESET V9 abaixo.');
+    else setError('Erro de login. Tente o RESET V10 abaixo.');
   };
 
   return (
@@ -41,16 +41,16 @@ const Login: React.FC = () => {
           
           <button 
             onClick={handleForceRestart}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-indigo-700"
+            className="bg-violet-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-violet-700"
           >
-            Reset Sistema (V9)
+            Reset Sistema (V10)
           </button>
         </div>
         
         <h1 className="text-4xl font-black mb-1 tracking-tighter text-gray-900">MeUp</h1>
         <div className="flex items-center gap-2 mb-10">
-          <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Protocolo Ultra</p>
-          <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">V9 SMART</span>
+          <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Uber do RH</p>
+          <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black tracking-tighter">V10 SILENT SYNC</span>
         </div>
 
         {isDbEmpty && (
@@ -60,7 +60,7 @@ const Login: React.FC = () => {
               onClick={() => { seedDatabase(); setIsDbEmpty(false); }}
               className="w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase hover:bg-gray-100 transition-colors"
             >
-              Ativar Base V9
+              Ativar Base V10
             </button>
           </div>
         )}
@@ -80,7 +80,7 @@ const Login: React.FC = () => {
           <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-widest">Dica de Sincronia</p>
           <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 shadow-inner">
             <p className="text-[10px] font-bold text-gray-500 leading-relaxed text-center">
-              Para sincronizar em tempo real, defina o mesmo nome de sala nos dois dispositivos (Ex: <span className="text-black">LOJA01</span>).
+              Para sincronizar aparelhos, use o mesmo nome de sala (Ex: <span className="text-black">LOJA01</span>).
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3">

@@ -2,10 +2,10 @@
 import { DbState } from '../types';
 import { RJ_COORDS } from '../constants';
 
-// Novo endpoint para garantir requests limpas no CrudCrud
-const CRUD_ID = '35f299108f92476bb148560183187a55'; 
+// V10: Novo ID para renovar limites de requisição
+const CRUD_ID = '9806e23b18534b0789791443423f0532'; 
 const SYNC_BASE_URL = `https://crudcrud.com/api/${CRUD_ID}`;
-const STORAGE_KEY = 'meup_v9_ultimate_prod';
+const STORAGE_KEY = 'meup_v10_final_prod';
 
 const getInitialState = (): DbState => ({
   last_update: Date.now(),
@@ -46,34 +46,28 @@ const getRoomCollection = (room: string) => room.trim().toLowerCase().replace(/[
 async function pushToCloud(room: string, state: DbState) {
   try {
     const collection = getRoomCollection(room);
-    
-    // V9 Smart Sync: Primeiro tentamos ver se já existe algo na sala
     const checkRes = await fetch(`${SYNC_BASE_URL}/${collection}`);
-    const existing = await checkRes.json();
+    if (!checkRes.ok) throw new Error("Net Error");
     
+    const existing = await checkRes.json();
+    const { _id, ...cleanState } = state as any;
+
     if (Array.isArray(existing) && existing.length > 0) {
-      // Se existe, atualizamos o primeiro registro usando PUT (evita 403/429)
-      const targetId = existing[0]._id;
-      // Removendo o ID interno do crudcrud se ele vier no estado por engano
-      const { _id, ...cleanState } = state as any;
-      
-      await fetch(`${SYNC_BASE_URL}/${collection}/${targetId}`, {
+      await fetch(`${SYNC_BASE_URL}/${collection}/${existing[0]._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cleanState)
       });
     } else {
-      // Se não existe nada, criamos o primeiro registro da sala
       await fetch(`${SYNC_BASE_URL}/${collection}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state)
+        body: JSON.stringify(cleanState)
       });
     }
-    
     window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'OK' } }));
-  } catch (e: any) { 
-    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'ERRO' } }));
+  } catch (e) { 
+    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: '---' } }));
   }
 }
 
@@ -85,7 +79,6 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        // Pegamos o estado da nuvem (seja o primeiro via PUT ou o último via POST)
         const cloudState = data[data.length - 1] as DbState;
         const localState = getDb();
         
@@ -97,10 +90,11 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
         }
       }
       window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'OK' } }));
-      return false;
+    } else {
+      throw new Error();
     }
-  } catch (e: any) { 
-    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'FALHA' } }));
+  } catch (e) { 
+    window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: '...' } }));
   }
   return false;
 };
@@ -111,12 +105,14 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
   
   forceCloudFetch(cleanRoom).then(u => { if(u) onUpdate(); });
 
-  const interval = setInterval(async () => {
-    if (await forceCloudFetch(cleanRoom)) {
-      onUpdate();
-      window.dispatchEvent(new CustomEvent('meup-job-updated'));
-    }
-  }, 4000); 
+  const interval = setInterval(() => {
+    forceCloudFetch(cleanRoom).then(updated => {
+      if (updated) {
+        onUpdate();
+        window.dispatchEvent(new CustomEvent('meup-job-updated'));
+      }
+    });
+  }, 5000); 
   return () => clearInterval(interval);
 };
 
