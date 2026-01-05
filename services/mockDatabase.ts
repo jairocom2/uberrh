@@ -2,11 +2,10 @@
 import { DbState } from '../types';
 import { RJ_COORDS } from '../constants';
 
-// O CrudCrud gera um endpoint temporário de 24h. 
-// Para um MVP, usaremos um ID fixo que tentaremos renovar ou usar como base.
-const CRUD_ID = '919012f6282046559091873322f36093'; 
+// Novo endpoint para garantir requests limpas no CrudCrud
+const CRUD_ID = '35f299108f92476bb148560183187a55'; 
 const SYNC_BASE_URL = `https://crudcrud.com/api/${CRUD_ID}`;
-const STORAGE_KEY = 'meup_v8_ultra_prod';
+const STORAGE_KEY = 'meup_v9_ultimate_prod';
 
 const getInitialState = (): DbState => ({
   last_update: Date.now(),
@@ -42,23 +41,35 @@ export const saveDb = (state: DbState) => {
   }
 };
 
-// No CrudCrud, cada "coleção" será uma sala
 const getRoomCollection = (room: string) => room.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 
 async function pushToCloud(room: string, state: DbState) {
   try {
     const collection = getRoomCollection(room);
-    // No CrudCrud, para atualizar um valor fixo, costumamos usar um ID fixo na coleção
-    // Mas para simplificar o MVP e evitar 404/405, vamos usar o endpoint de coleção direto
-    // Nota: CrudCrud limita a 100 requests, ideal para demonstração rápida
     
-    // Tentamos salvar o estado. Como o CrudCrud é limitado, usamos um proxy simples ou 
-    // persistimos apenas o essencial se necessário, mas aqui tentaremos o estado todo.
-    await fetch(`${SYNC_BASE_URL}/${collection}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...state, _id: 'master_state' }) // Forçamos um ID para tentar sobrescrever
-    });
+    // V9 Smart Sync: Primeiro tentamos ver se já existe algo na sala
+    const checkRes = await fetch(`${SYNC_BASE_URL}/${collection}`);
+    const existing = await checkRes.json();
+    
+    if (Array.isArray(existing) && existing.length > 0) {
+      // Se existe, atualizamos o primeiro registro usando PUT (evita 403/429)
+      const targetId = existing[0]._id;
+      // Removendo o ID interno do crudcrud se ele vier no estado por engano
+      const { _id, ...cleanState } = state as any;
+      
+      await fetch(`${SYNC_BASE_URL}/${collection}/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleanState)
+      });
+    } else {
+      // Se não existe nada, criamos o primeiro registro da sala
+      await fetch(`${SYNC_BASE_URL}/${collection}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
+    }
     
     window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'UP', status: 'OK' } }));
   } catch (e: any) { 
@@ -74,12 +85,11 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        // Pegamos o último estado postado na coleção (o mais recente)
+        // Pegamos o estado da nuvem (seja o primeiro via PUT ou o último via POST)
         const cloudState = data[data.length - 1] as DbState;
         const localState = getDb();
         
         if (cloudState && cloudState.last_update > (localState.last_update || 0)) {
-          // Removemos o _id do crudcrud para não sujar nosso banco
           const { _id, ...rest } = cloudState as any;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
           window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'SYNC' } }));
@@ -89,7 +99,7 @@ export const forceCloudFetch = async (room: string): Promise<boolean> => {
       window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'OK' } }));
       return false;
     }
-  } catch (e) { 
+  } catch (e: any) { 
     window.dispatchEvent(new CustomEvent('meup-net-log', { detail: { type: 'DOWN', status: 'FALHA' } }));
   }
   return false;
@@ -106,7 +116,7 @@ export const startCloudSync = (room: string, onUpdate: () => void) => {
       onUpdate();
       window.dispatchEvent(new CustomEvent('meup-job-updated'));
     }
-  }, 3000); 
+  }, 4000); 
   return () => clearInterval(interval);
 };
 
